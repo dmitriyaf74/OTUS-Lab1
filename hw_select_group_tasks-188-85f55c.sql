@@ -43,8 +43,14 @@ TODO: напишите здесь свое решение
 
 SELECT ps.SupplierID, ps.SupplierName
   FROM [Purchasing].[Suppliers] ps
+    left join [Purchasing].[PurchaseOrders] po on po.[SupplierID] = ps.[SupplierID]
+  where po.[SupplierID] is null;
+
+/* Этот дешевле
+SELECT ps.SupplierID, ps.SupplierName
+  FROM [Purchasing].[Suppliers] ps
   where not exists(select 1 from [Purchasing].[PurchaseOrders] po
-    where po.[SupplierID] = ps.[SupplierID]);
+    where po.[SupplierID] = ps.[SupplierID]);*/
 
 /*
 3. Заказы (Orders) с ценой товара (UnitPrice) более 100$ 
@@ -74,10 +80,10 @@ SELECT distinct so.OrderID
   ,floor((month(so.OrderDate)-1)/4)+1 DateT
   ,sc.[CustomerName]
   FROM [Sales].[Orders] so
-    left join [Sales].[Customers] sc on sc.[CustomerID] = so.[CustomerID]
     join [Sales].[OrderLines] sol on sol.OrderID = so.OrderID 
     join [Warehouse].[StockItems] ws on ws.[StockItemID] = sol.[StockItemID] 
-	  and (ws.[UnitPrice] > 100 or (sol.[Quantity] > 20 and so.PickingCompletedWhen is not null))
+    left join [Sales].[Customers] sc on sc.[CustomerID] = so.[CustomerID]
+  where (ws.[UnitPrice] > 100 or (sol.[Quantity] > 20 and so.PickingCompletedWhen is not null))
 ORDER BY DateQuarter,DateT,DateRus OFFSET 1000 ROWS FETCH FIRST 100 ROWS ONLY;
 
 /*
