@@ -104,50 +104,74 @@ select year(si.InvoiceDate) YearInvoice
 то этот месяц также отображался бы в результатах, но там были нули.
 */
 
-select min(si.InvoiceDate) from Sales.Invoices si
-select max(si.InvoiceDate) from Sales.Invoices si
-
-CREATE PROCEDURE #Dates
-AS
-declare @MinInvoiceDate datetime2(7);
-declare @MaxInvoiceDate datetime2(7);
-BEGIN
-  select @MinInvoiceDate=min(si.InvoiceDate) from Sales.Invoices si;
-  select @MaxInvoiceDate=max(si.InvoiceDate) from Sales.Invoices si;
-  while @MinInvoiceDate <= @MaxInvoiceDate 
-  begin
-    select @MinInvoiceDate = dateadd(day,1,@MinInvoiceDate);
-	select @MinInvoiceDate;
-	
-  end
-
-END
-EXECUTE #Dates;
-drop procedure #Dates;  
-
-select year(si.InvoiceDate) YearInvoice
-  , month(si.InvoiceDate) MonthInvoice
-  , sum(sil.ExtendedPrice) SumExtendedPrice
-  from Sales.Invoices si
-    left join Sales.InvoiceLines sil on sil.InvoiceID = si.InvoiceID
-  group by year(si.InvoiceDate),month(si.InvoiceDate)
-  having sum(sil.ExtendedPrice) > 10000
-  order by YearInvoice,MonthInvoice
-
+--2---------------------------------------------------------
 
 declare @MinInvoiceDate datetime2(7);
 declare @MaxInvoiceDate datetime2(7);
 select @MinInvoiceDate=min(si.InvoiceDate) from Sales.Invoices si;
 select @MaxInvoiceDate=max(si.InvoiceDate) from Sales.Invoices si;
-
 WITH Dates AS
 	(
-		SELECT @MinInvoiceDate AS DateStart -- Задаем якорь рекурсии
-	
+		SELECT DATEADD(month,-1,DATEADD(day,1,eomonth(@MinInvoiceDate))) AS DateStart -- Задаем якорь рекурсии
 		UNION ALL
-
 		SELECT DATEADD(month, 1, DateStart) AS DateStart -- Увеличиваем значение даты на 1 день
 		FROM Dates
 		WHERE DateStart < @MaxInvoiceDate -- Прекращаем выполнение, когда дойдем до даты окончания
 	)
-select * from Dates
+, Invoices2 AS
+(select 
+   year(si.InvoiceDate) YearInvoice
+  , month(si.InvoiceDate) MonthInvoice
+  , sum(sil.ExtendedPrice) SumExtendedPrice
+  , DATEADD(month,-1,DATEADD(day,1,eomonth(si.InvoiceDate))) AS DateStart
+  from Sales.Invoices si
+    left join Sales.InvoiceLines sil on sil.InvoiceID = si.InvoiceID
+  group by year(si.InvoiceDate),month(si.InvoiceDate),DATEADD(month,-1,DATEADD(day,1,eomonth(si.InvoiceDate)))
+  having sum(sil.ExtendedPrice) > 10000--5000000
+  )
+select year(d.DateStart) YearInvoice
+  , month(d.DateStart) MonthInvoice
+  , i.SumExtendedPrice
+from Dates d
+  left join Invoices2 i on i.DateStart = d.DateStart
+order by YearInvoice,MonthInvoice
+go
+--3--------------------------------------------------------------------------
+
+declare @MinInvoiceDate datetime2(7);
+declare @MaxInvoiceDate datetime2(7);
+select @MinInvoiceDate=min(si.InvoiceDate) from Sales.Invoices si;
+select @MaxInvoiceDate=max(si.InvoiceDate) from Sales.Invoices si;
+WITH Dates AS
+	(
+		SELECT DATEADD(month,-1,DATEADD(day,1,eomonth(@MinInvoiceDate))) AS DateStart -- Задаем якорь рекурсии
+		UNION ALL
+		SELECT DATEADD(month, 1, DateStart) AS DateStart -- Увеличиваем значение даты на 1 день
+		FROM Dates
+		WHERE DateStart < @MaxInvoiceDate -- Прекращаем выполнение, когда дойдем до даты окончания
+	)
+	
+, Invoices2 AS
+(select year(si.InvoiceDate) YearInvoice
+  , month(si.InvoiceDate) MonthInvoice
+  , ws.StockItemName
+  , sum(sil.ExtendedPrice) SumExtendedPrice
+  , min(si.InvoiceDate) MinInvoiceDate
+  , sum(sil.Quantity) SumQuantity
+  , DATEADD(month,-1,DATEADD(day,1,eomonth(si.InvoiceDate))) AS DateStart
+  from Sales.Invoices si 
+    left join Sales.InvoiceLines sil on sil.InvoiceID = si.InvoiceID
+	left join Warehouse.StockItems ws on ws.StockItemID = sil.StockItemID
+  group by year(si.InvoiceDate),month(si.InvoiceDate),ws.StockItemName,DATEADD(month,-1,DATEADD(day,1,eomonth(si.InvoiceDate)))
+  having sum(sil.Quantity) < 50
+  ) 
+select year(d.DateStart) YearInvoice
+  , month(d.DateStart) MonthInvoice
+  , i.StockItemName
+  , i.SumExtendedPrice
+  , i.MinInvoiceDate
+  , i.SumQuantity
+from Dates d
+  left join Invoices2 i on i.DateStart = d.DateStart
+order by YearInvoice,MonthInvoice
+go
