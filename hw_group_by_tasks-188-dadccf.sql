@@ -114,7 +114,7 @@ WITH Dates AS
 	(
 		SELECT DATEADD(month,-1,DATEADD(day,1,eomonth(@MinInvoiceDate))) AS DateStart -- Задаем якорь рекурсии
 		UNION ALL
-		SELECT DATEADD(month, 1, DateStart) AS DateStart -- Увеличиваем значение даты на 1 день
+		SELECT DATEADD(month, 1, DateStart) AS DateStart -- Увеличиваем значение даты на 1 месяц
 		FROM Dates
 		WHERE DateStart < @MaxInvoiceDate -- Прекращаем выполнение, когда дойдем до даты окончания
 	)
@@ -146,7 +146,7 @@ WITH Dates AS
 	(
 		SELECT DATEADD(month,-1,DATEADD(day,1,eomonth(@MinInvoiceDate))) AS DateStart -- Задаем якорь рекурсии
 		UNION ALL
-		SELECT DATEADD(month, 1, DateStart) AS DateStart -- Увеличиваем значение даты на 1 день
+		SELECT DATEADD(month, 1, DateStart) AS DateStart -- Увеличиваем значение даты на 1 месяц
 		FROM Dates
 		WHERE DateStart < @MaxInvoiceDate -- Прекращаем выполнение, когда дойдем до даты окончания
 	)
