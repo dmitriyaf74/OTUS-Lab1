@@ -92,15 +92,7 @@ order by 3
 
 TODO: напишите здесь свое решение
 
-/*
-4. Выберите города (ид и название), в которые были доставлены товары, 
-входящие в тройку самых дорогих товаров, а также имя сотрудника, 
-который осуществлял упаковку заказов (PackedByPersonID).
-*/
-
-TODO: напишите здесь свое решение
-
-select top 5 sc.CustomerID, sc.CustomerName, sct.TransactionAmount 
+select distinct top 5 sc.CustomerID, sc.CustomerName, sct.TransactionAmount 
 from Sales.CustomerTransactions sct
   left join sales.Customers sc on sc.CustomerID = sct.CustomerID
 order by sct.TransactionAmount desc
@@ -110,9 +102,29 @@ with cte_trans as (
 select top 5 sct.CustomerID, sct.TransactionAmount 
 from Sales.CustomerTransactions sct  
 order by sct.TransactionAmount desc)
-select sc.CustomerID, sc.CustomerName, sct.TransactionAmount
+select distinct sc.CustomerID, sc.CustomerName, sct.TransactionAmount
   from cte_trans sct
     left join sales.Customers sc on sc.CustomerID = sct.CustomerID
+go
+
+/*
+4. Выберите города (ид и название), в которые были доставлены товары, 
+входящие в тройку самых дорогих товаров, а также имя сотрудника, 
+который осуществлял упаковку заказов (PackedByPersonID).
+*/
+
+TODO: напишите здесь свое решение
+
+with cte_top_items as(
+select top 5 with ties si.StockItemID, si.StockItemName, si.UnitPrice from Warehouse.StockItems si order by si.UnitPrice desc
+)
+select distinct ct.CityID, ct.CityName,p.FullName 
+from cte_top_items cti
+	join Sales.InvoiceLines il on il.StockItemID = cti.StockItemID
+	join Sales.Invoices i on i.InvoiceID = il.InvoiceID
+	left join sales.Customers c on c.CustomerID = i.CustomerID
+	left join Application.Cities ct on ct.CityID = c.DeliveryCityID
+	left join Application.People p on p.PersonID = i.PackedByPersonID
 go
 
 -- ---------------------------------------------------------------------------
