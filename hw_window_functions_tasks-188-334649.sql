@@ -89,6 +89,7 @@ select si.InvoiceDate
   group by si.InvoiceDate
 )
 select vi.InvoiceDate
+  ,vi.qPrice
   ,sum(vi.qPrice) over(order by eomonth(vi.InvoiceDate), eomonth(vi.InvoiceDate) range BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW )
   from v_Invoices vi
   order by vi.InvoiceDate
@@ -115,6 +116,35 @@ go
 
 --напишите здесь свое решение
 
+with v_Invoices as(
+select month(si.InvoiceDate) mDate
+  ,sil.StockItemID
+  ,(ROW_NUMBER() OVER (partition by month(si.InvoiceDate) ORDER BY sum(sil.Quantity) DESC))  rnum
+  ,sum(sil.Quantity) Quantity
+  from Sales.Invoices si
+    join sales.InvoiceLines sil on sil.InvoiceID = si.InvoiceID
+  where si.InvoiceDate between '20160101' and '20161231' 
+  group by month(si.InvoiceDate),sil.StockItemID
+  --order by month(si.InvoiceDate),sum(sil.Quantity) desc
+)
+select vi.mDate,vi.StockItemID,ws.StockItemName,vi.Quantity
+  from v_Invoices vi
+    left join Warehouse.StockItems ws on ws.StockItemID = vi.StockItemID
+  where rnum <=2
+  order by vi.mDate,vi.Quantity desc
+go
+
+select top(1) with ties month(si.InvoiceDate) mDate
+  ,sil.StockItemID,ws.StockItemName
+  ,sum(sil.Quantity) Quantity
+  from Sales.Invoices si
+    join sales.InvoiceLines sil on sil.InvoiceID = si.InvoiceID
+    left join Warehouse.StockItems ws on ws.StockItemID = sil.StockItemID
+  where si.InvoiceDate between '20160101' and '20161231' 
+  group by month(si.InvoiceDate),sil.StockItemID,ws.StockItemName
+  order by iif((ROW_NUMBER() OVER (partition by month(si.InvoiceDate) ORDER BY sum(sil.Quantity) DESC))<=2,1,3)
+go
+
 /*
 4. Функции одним запросом
 Посчитайте по таблице товаров (в вывод также должен попасть ид товара, название, брэнд и цена):
@@ -130,6 +160,16 @@ go
 */
 
 --напишите здесь свое решение
+select ws.StockItemID,ws.StockItemName,ws.Brand,ws.UnitPrice
+  ,(ROW_NUMBER() OVER (partition by substring(ws.StockItemName,1,1) ORDER BY ws.StockItemName)) rownums
+  ,(count(*) over()) countItems
+  ,(count(*) over(partition by substring(ws.StockItemName,1,1))) countItemsalpha
+  ,(lead(ws.StockItemID) over(ORDER BY ws.StockItemName)) nextid
+  ,(lag(ws.StockItemID) over(ORDER BY ws.StockItemName)) previd
+  ,(lag(ws.StockItemName,2,'"No items"') over(ORDER BY ws.StockItemName)) prev2name
+  from Warehouse.StockItems ws
+  order by ws.StockItemName
+go
 
 /*
 5. По каждому сотруднику выведите последнего клиента, которому сотрудник что-то продал.
@@ -137,6 +177,15 @@ go
 */
 
 --напишите здесь свое решение
+select top(1) with ties si.SalespersonPersonID,ap.FullName,si.CustomerID,sc.CustomerName,si.InvoiceDate
+  ,sum(sil.Quantity * sil.UnitPrice) over(partition by sil.InvoiceID) TotalRub 
+  --,ROW_NUMBER() OVER (partition by si.SalespersonPersonID ORDER BY si.InvoiceDate desc)
+  from Sales.Invoices si
+    left join Application.People ap on ap.PersonID = si.SalespersonPersonID
+	left join Sales.Customers sc on sc.CustomerID = si.CustomerID
+	left join Sales.InvoiceLines sil on sil.InvoiceID = si.InvoiceID
+  order by (ROW_NUMBER() OVER (partition by si.SalespersonPersonID ORDER BY si.InvoiceDate desc))
+go
 
 /*
 6. Выберите по каждому клиенту два самых дорогих товара, которые он покупал.
@@ -144,5 +193,12 @@ go
 */
 
 --напишите здесь свое решение
+
+select top(1) with ties si.CustomerID,sc.CustomerName,sil.StockItemID,ws.StockItemName,ws.UnitPrice,si.InvoiceDate
+  from Sales.Invoices si
+    join Sales.Customers sc on sc.CustomerID = si.CustomerID
+    join Sales.InvoiceLines sil on sil.InvoiceID = si.InvoiceID
+	join Warehouse.StockItems ws on ws.StockItemID = sil.StockItemID
+  order by iif(row_number() over(partition by si.CustomerID order by ws.UnitPrice desc)<=2,1,3)
 
 --Опционально можете для каждого запроса без оконных функций сделать вариант запросов с оконными функциями и сравнить их производительность. 
