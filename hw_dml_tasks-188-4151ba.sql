@@ -262,6 +262,7 @@ RECONFIGURE;
 GO  
 
 
+declare @cmd as varchar(250)
 declare @dml as nvarchar(max)
 declare @SrvName as nvarchar(50)
 declare @SrcTable as nvarchar(250)
@@ -302,4 +303,8 @@ exec sp_executesql @dml
 
 set @dml = N'select * from ' + @SrcTable + '_Copy'
 exec sp_executesql @dml
+
+set @cmd = 'del ' + @TmpFile
+exec xp_cmdshell @cmd
 go
+
