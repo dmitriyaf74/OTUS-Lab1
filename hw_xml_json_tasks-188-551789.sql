@@ -176,7 +176,9 @@ drop table if exists #StockItems_Copy
 
 --напишите здесь свое решение
 
-select StockItemName as [@Name]
+drop table if exists ##Test
+declare @a xml
+set @a =  (select StockItemName as [@Name]
 ,SupplierID
 ,UnitPackageID as [Package/UnitPackageID]
 ,OuterPackageID as [Package/OuterPackageID]
@@ -187,7 +189,15 @@ select StockItemName as [@Name]
 , TaxRate
 , UnitPrice
 from Warehouse.StockItems
-for xml path('Item'), root('StockItems') 
+for xml path('Item'), root('StockItems') )
+
+declare @b nvarchar(max)
+set @b = CONVERT(nvarchar(max), @a)
+select @b as [xml_field] into ##Test
+
+exec xp_cmdshell 'bcp "select xml_field from ##Test" queryout "C:\Install\StockItems.txt" -N -T -S "DON-HOME" -d "WideWorldImporters"'
+
+drop table if exists ##Test
 
 /*
 3. В таблице Warehouse.StockItems в колонке CustomFields есть данные в JSON.
