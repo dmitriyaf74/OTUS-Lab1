@@ -238,11 +238,24 @@ select ws.StockItemID, ws.StockItemName
 
 
 --напишите здесь свое решение
+--var1
 select ws.StockItemID, ws.StockItemName
   --,oj.[value]
   ,STRING_AGG(oj1.[key],',') AllTags
   from Warehouse.StockItems ws
     cross apply openjson(ws.CustomFields,'$.Tags') oj
+    cross apply openjson(ws.CustomFields,'$') oj1
+  where oj.[value] = 'Vintage'
+  group by ws.StockItemID, ws.StockItemName, oj.[value]
+
+--var2
+select ws.StockItemID, ws.StockItemName
+  --,oj.[value]
+  ,STRING_AGG(oj1.[key],',') AllTags
+  --,oj0.*
+  from Warehouse.StockItems ws
+    cross apply openjson(ws.CustomFields,'$') oj0
+    cross apply openjson(iif(oj0.[type] <> 4, ws.CustomFields, oj0.[value]),'$') oj
     cross apply openjson(ws.CustomFields,'$') oj1
   where oj.[value] = 'Vintage'
   group by ws.StockItemID, ws.StockItemName, oj.[value]
