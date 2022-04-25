@@ -49,7 +49,7 @@ USE WideWorldImporters
 drop table if exists #StockItems_Copy
 
 declare @XmlDoc xml
-select @XmlDoc = BulkColumn from openrowset (bulk 'C:\Install\MSSQL курс\Урок11\StockItems-188-1fb5df.xml', SINGLE_CLOB) as data
+select @XmlDoc = BulkColumn from openrowset (bulk 'C:\Install\MSSQL_course\Урок11\StockItems-188-1fb5df.xml', SINGLE_CLOB) as data
 --select @XmlDoc
 declare @docHandle int
 exec sp_xml_preparedocument @docHandle OUTPUT,@XmlDoc
@@ -114,7 +114,7 @@ drop table if exists #StockItems_Copy
 drop table if exists #StockItems_Copy
 
 declare @XmlDoc xml
-select @XmlDoc = BulkColumn from openrowset (bulk 'C:\Install\MSSQL курс\Урок11\StockItems-188-1fb5df.xml', SINGLE_CLOB) as data
+select @XmlDoc = BulkColumn from openrowset (bulk 'C:\Install\MSSQL_course\Урок11\StockItems-188-1fb5df.xml', SINGLE_CLOB) as data
 
 
 select n.Item.value('(@Name)[1]', 'nvarchar(100)' ) as StockItemName
@@ -195,7 +195,7 @@ declare @b nvarchar(max)
 set @b = CONVERT(nvarchar(max), @a)
 select @b as [xml_field] into ##Test
 
-exec xp_cmdshell 'bcp "select xml_field from ##Test" queryout "C:\Install\StockItems.txt" -N -T -S "DON-HOME" -d "WideWorldImporters"'
+exec xp_cmdshell 'bcp "select xml_field from ##Test" queryout "C:\Install\MSSQL_course\StockItems.xml" -S "DON-HOME" -d "WideWorldImporters" /c /t, -T'
 
 drop table if exists ##Test
 
@@ -208,7 +208,14 @@ drop table if exists ##Test
 - FirstTag (из поля CustomFields, первое значение из массива Tags)
 */
 
-напишите здесь свое решение
+--напишите здесь свое решение
+
+--declare @J json
+select ws.StockItemID, ws.StockItemName 
+  ,json_value(ws.CustomFields, '$.CountryOfManufacture') 
+  ,json_value(ws.CustomFields, '$.Tags[0]') 
+  from Warehouse.StockItems ws
+    
 
 /*
 4. Найти в StockItems строки, где есть тэг "Vintage".
@@ -230,4 +237,13 @@ drop table if exists ##Test
 */
 
 
-напишите здесь свое решение
+--напишите здесь свое решение
+select ws.StockItemID, ws.StockItemName
+  --,oj.[value]
+  ,STRING_AGG(oj1.[key],',') AllTags
+  from Warehouse.StockItems ws
+    cross apply openjson(ws.CustomFields,'$.Tags') oj
+    cross apply openjson(ws.CustomFields,'$') oj1
+  where oj.[value] = 'Vintage'
+  group by ws.StockItemID, ws.StockItemName, oj.[value]
+
