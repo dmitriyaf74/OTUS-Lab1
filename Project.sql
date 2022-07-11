@@ -1,4 +1,4 @@
-USE [master]
+п»їUSE [master]
 GO
 
 --select @@SERVERNAME
@@ -148,40 +148,40 @@ ALTER TABLE OrderSpecs  WITH CHECK ADD  CONSTRAINT FK_OrderSpecs_Goods FOREIGN K
 ALTER TABLE OrderSpecs CHECK CONSTRAINT FK_OrderSpecs_Goods
 GO
 
-insert into ClientTypes (ClientTypeID,ClientTypeName) values(0,'Предприятие')
-insert into ClientTypes (ClientTypeID,ClientTypeName) values(1,'Агент')
-insert into ClientTypes (ClientTypeID,ClientTypeName) values(2,'Покупатель')
-insert into ClientTypes (ClientTypeID,ClientTypeName) values(3,'Поставщик')
+insert into ClientTypes (ClientTypeID,ClientTypeName) values(0,'РџСЂРµРґРїСЂРёСЏС‚РёРµ')
+insert into ClientTypes (ClientTypeID,ClientTypeName) values(1,'РђРіРµРЅС‚')
+insert into ClientTypes (ClientTypeID,ClientTypeName) values(2,'РџРѕРєСѓРїР°С‚РµР»СЊ')
+insert into ClientTypes (ClientTypeID,ClientTypeName) values(3,'РџРѕСЃС‚Р°РІС‰РёРє')
 
 insert into Genders (GenderID,GenderName) values (0,'Unknown')
 insert into Genders (GenderID,GenderName) values (1,'Male')
 insert into Genders (GenderID,GenderName) values (2,'Female')
 
-insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (0,'Агент 0',0,0)
-insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (1,'Покупатель 1',0,0)
-insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (2,'Покупатель 2',0,1)
-insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (3,'Покупатель 3',0,1)
-insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (4,'Покупатель 4',0,1)
-insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (5,'Покупатель 5',0,1)
-insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (6,'Покупатель 6',1,2)
-insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (7,'Покупатель 7',1,2)
-insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (8,'Покупатель 8',2,2)
-insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (9,'Покупатель 9',1,2)
-insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (10,'Покупатель 10',1,2)
-insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (11,'Покупатель 11',2,2)
+insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (0,'РђРіРµРЅС‚ 0',0,0)
+insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (1,'РџРѕРєСѓРїР°С‚РµР»СЊ 1',0,0)
+insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (2,'РџРѕРєСѓРїР°С‚РµР»СЊ 2',0,1)
+insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (3,'РџРѕРєСѓРїР°С‚РµР»СЊ 3',0,1)
+insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (4,'РџРѕРєСѓРїР°С‚РµР»СЊ 4',0,1)
+insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (5,'РџРѕРєСѓРїР°С‚РµР»СЊ 5',0,1)
+insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (6,'РџРѕРєСѓРїР°С‚РµР»СЊ 6',1,2)
+insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (7,'РџРѕРєСѓРїР°С‚РµР»СЊ 7',1,2)
+insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (8,'РџРѕРєСѓРїР°С‚РµР»СЊ 8',2,2)
+insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (9,'РџРѕРєСѓРїР°С‚РµР»СЊ 9',1,2)
+insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (10,'РџРѕРєСѓРїР°С‚РµР»СЊ 10',1,2)
+insert into Clients(ClientID,ClientName,GenderID,ClientTypeId) values (11,'РџРѕРєСѓРїР°С‚РµР»СЊ 11',2,2)
 
 
-insert into Addresses(AddressID,AddressStr) values(1,'Уфа, Мира, 8')
-insert into Addresses(AddressID,AddressStr) values(2,'Казань, Фронтовых бригад, 6')
-insert into Addresses(AddressID,AddressStr) values(3,'Вятка, Луговая, 1')
-insert into Addresses(AddressID,AddressStr) values(4,'Москва, Ленинградский проспект, 33')
-insert into Addresses(AddressID,AddressStr) values(5,'Челябинск, Ульяновых, 45')
-insert into Addresses(AddressID,AddressStr) values(6,'Уфа, Мира, 18')
-insert into Addresses(AddressID,AddressStr) values(7,'Казань, Фронтовых бригад, 16')
-insert into Addresses(AddressID,AddressStr) values(8,'Вятка, Луговая, 11')
-insert into Addresses(AddressID,AddressStr) values(9,'Москва, Ленинградский проспект, 133')
-insert into Addresses(AddressID,AddressStr) values(10,'Челябинск, Ульяновых, 145')
-insert into Addresses(AddressID,AddressStr) values(11,'Челябинск, Ульяновых, 245')
+insert into Addresses(AddressID,AddressStr) values(1,'РЈС„Р°, РњРёСЂР°, 8')
+insert into Addresses(AddressID,AddressStr) values(2,'РљР°Р·Р°РЅСЊ, Р¤СЂРѕРЅС‚РѕРІС‹С… Р±СЂРёРіР°Рґ, 6')
+insert into Addresses(AddressID,AddressStr) values(3,'Р’СЏС‚РєР°, Р›СѓРіРѕРІР°СЏ, 1')
+insert into Addresses(AddressID,AddressStr) values(4,'РњРѕСЃРєРІР°, Р›РµРЅРёРЅРіСЂР°РґСЃРєРёР№ РїСЂРѕСЃРїРµРєС‚, 33')
+insert into Addresses(AddressID,AddressStr) values(5,'Р§РµР»СЏР±РёРЅСЃРє, РЈР»СЊСЏРЅРѕРІС‹С…, 45')
+insert into Addresses(AddressID,AddressStr) values(6,'РЈС„Р°, РњРёСЂР°, 18')
+insert into Addresses(AddressID,AddressStr) values(7,'РљР°Р·Р°РЅСЊ, Р¤СЂРѕРЅС‚РѕРІС‹С… Р±СЂРёРіР°Рґ, 16')
+insert into Addresses(AddressID,AddressStr) values(8,'Р’СЏС‚РєР°, Р›СѓРіРѕРІР°СЏ, 11')
+insert into Addresses(AddressID,AddressStr) values(9,'РњРѕСЃРєРІР°, Р›РµРЅРёРЅРіСЂР°РґСЃРєРёР№ РїСЂРѕСЃРїРµРєС‚, 133')
+insert into Addresses(AddressID,AddressStr) values(10,'Р§РµР»СЏР±РёРЅСЃРє, РЈР»СЊСЏРЅРѕРІС‹С…, 145')
+insert into Addresses(AddressID,AddressStr) values(11,'Р§РµР»СЏР±РёРЅСЃРє, РЈР»СЊСЏРЅРѕРІС‹С…, 245')
 
 
 insert into ClientStores(ClientStoreId,ClientID,AddressID,ClientStoreName) 
@@ -192,7 +192,7 @@ DECLARE @counter SMALLINT;
 SET @counter = 1;  
 WHILE @counter < 1000  
    BEGIN  
-	  insert into Goods(GoodId,GoodName,PhotoUrl,Price) values (@counter,'Товар ' + str(@counter),'',rand()*1000)
+	  insert into Goods(GoodId,GoodName,PhotoUrl,Price) values (@counter,'РўРѕРІР°СЂ ' + str(@counter),'',rand()*1000)
       SET @counter = @counter + 1  
    END; 
 
@@ -228,8 +228,8 @@ select * from Orders --Specs
 
 
 
---Партиционирование Orders
---Перестраиваем таблицы(PK FK)
+--РџР°СЂС‚РёС†РёРѕРЅРёСЂРѕРІР°РЅРёРµ Orders
+--РџРµСЂРµСЃС‚СЂР°РёРІР°РµРј С‚Р°Р±Р»РёС†С‹(PK FK)
 alter table OrderSpecs DROP CONSTRAINT FK_OrderSpecs_Orders
 alter table Orders DROP CONSTRAINT PK_Orders
 alter table Orders add CONSTRAINT PK_Orders primary key NONCLUSTERED (OrderId) 
@@ -252,7 +252,7 @@ CREATE CLUSTERED INDEX ClusteredIndex_on_schmYearPartition ON Orders
 	(OrderDate) ON schmYearPartition(OrderDate)
 
 
---Наблюдается небольшой  прирост производительности, при условии что период находится в рамках одного раздела (54%/46%)
+--РќР°Р±Р»СЋРґР°РµС‚СЃСЏ РЅРµР±РѕР»СЊС€РѕР№  РїСЂРёСЂРѕСЃС‚ РїСЂРѕРёР·РІРѕРґРёС‚РµР»СЊРЅРѕСЃС‚Рё, РїСЂРё СѓСЃР»РѕРІРёРё С‡С‚Рѕ РїРµСЂРёРѕРґ РЅР°С…РѕРґРёС‚СЃСЏ РІ СЂР°РјРєР°С… РѕРґРЅРѕРіРѕ СЂР°Р·РґРµР»Р° (54%/46%)
 select * from Orders o where 1=1
 and o.OrderDeliveryDatePlan = '20130422'
 and o.OrderDate >= '20130102' and o.OrderDate < '20180102'
