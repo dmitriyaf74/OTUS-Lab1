@@ -67,13 +67,14 @@ CREATE TABLE Clients(
 	ClientID bigint NOT NULL,
 	ClientName varchar(255) NOT NULL,
 	GenderID bigint NULL,
-	ClientTypeId  bigint NOT NULL)
+	ClientTypeId  bigint NOT NULL,
+	Debt numeric(18, 2))
 alter table Clients add CONSTRAINT PK_Clients primary key (ClientID)
 create sequence ClientGen
 ALTER TABLE Clients ADD  CONSTRAINT ClientID  DEFAULT (NEXT VALUE FOR ClientGen) FOR ClientID
 
 ALTER TABLE Clients WITH CHECK ADD  CONSTRAINT FK_Clients_Genders FOREIGN KEY(GenderId) REFERENCES Genders (GenderId)
-ALTER TABLE ClientTypes WITH CHECK ADD  CONSTRAINT FK_ClientTypes_Genders FOREIGN KEY(ClientTypeId) REFERENCES ClientTypes (ClientTypeId)
+ALTER TABLE Clients WITH CHECK ADD  CONSTRAINT FK_ClientTypes_Genders FOREIGN KEY(ClientTypeId) REFERENCES ClientTypes (ClientTypeId)
 GO
 
 CREATE TABLE ClientStores(
@@ -201,11 +202,15 @@ WHILE @counter < 1000
 DECLARE @counter1 SMALLINT;  
 DECLARE @counter2 SMALLINT;  
 DECLARE @OrderDate1 date;  
+DECLARE @WD smallint;  
 SET @counter1 = 1;  
 WHILE @counter1 < 8000  
    BEGIN  
       --set @OrderDate1 = DATEADD(day,round(rand()*6000,0),'2000-01-01')
       set @OrderDate1 = DATEADD(day,@counter1,'2000-01-01')
+	  set @WD = DATEPART(weekday,@OrderDate1)
+	  if @WD > 5
+	    set @OrderDate1 = DATEADD(day,-4,@OrderDate1)
 	  insert into Orders(OrderId,OrderNo,OrderDate,OrderDeliveryDatePlan,CustomerID,CustomerStoreId,AgentId)
 	    values(@counter1,@counter1,@OrderDate1,DATEADD(day,1,@OrderDate1),round(rand()*10+1,0),round(rand()*10+1,0),0)
 
@@ -252,13 +257,198 @@ CREATE CLUSTERED INDEX ClusteredIndex_on_schmYearPartition ON Orders
 	(OrderDate) ON schmYearPartition(OrderDate)
 
 
---Наблюдается небольшой  прирост производительности, при условии что период находится в рамках одного раздела (54%/46%)
+/*--Наблюдается небольшой  прирост производительности, при условии что период находится в рамках одного раздела (54%/46%)
 select * from Orders o where 1=1
 and o.OrderDeliveryDatePlan = '20130422'
 and o.OrderDate >= '20130102' and o.OrderDate < '20180102'
 
 select * from Orders o where 1=1
 and o.OrderDeliveryDatePlan = '20130422'
-and o.OrderDate >= '20100101' and o.OrderDate < '20150101'
+and o.OrderDate >= '20100101' and o.OrderDate < '20150101'*/
+
+SELECT * INTO Clients_Source  FROM Clients
+
+--Включение СервисБрокера
+USE [master]
+ALTER DATABASE KPK_DB_X SET ENABLE_BROKER; 
+ALTER DATABASE KPK_DB_X SET TRUSTWORTHY ON;
+ALTER AUTHORIZATION ON DATABASE::KPK_DB_X TO [sa];
+
+
+USE [KPK_DB_X]
+--Создание запросов
+-- For Request
+CREATE MESSAGE TYPE
+[//KDX/Debt/RequestMessage]
+VALIDATION=WELL_FORMED_XML;
+-- For Reply
+CREATE MESSAGE TYPE
+[//KDX/Debt/ReplyMessage]
+VALIDATION=WELL_FORMED_XML; 
+
+CREATE CONTRACT [//KDX/Debt/Contract]
+      ([//KDX/Debt/RequestMessage]
+         SENT BY INITIATOR,
+       [//KDX/Debt/ReplyMessage]
+         SENT BY TARGET
+      );
+go
+--СОздание очередей
+CREATE QUEUE TargetQueueKDX;
+CREATE SERVICE [//KDX/Debt/TargetService]
+       ON QUEUE TargetQueueKDX
+       ([//KDX/Debt/Contract]);
+GO
+CREATE QUEUE InitiatorQueueKDX;
+CREATE SERVICE [//KDX/Debt/InitiatorService]
+       ON QUEUE InitiatorQueueKDX
+       ([//KDX/Debt/Contract]);
+GO
+--Отправка сообщения
+CREATE or ALTER PROCEDURE DebtInfoSend
+	@ClientID INT
+AS
+BEGIN
+	SET NOCOUNT ON;
+    --Sending a Request Message to the Target	
+	DECLARE @InitDlgHandle UNIQUEIDENTIFIER;
+	DECLARE @RequestMessage NVARCHAR(4000);
+	BEGIN TRAN 
+	--Prepare the Message
+	SELECT @RequestMessage = (SELECT ClientID,Debt
+							  FROM Clients_Source AS Clients
+							  WHERE ClientID = @ClientID
+							  FOR XML AUTO, root('RequestMessage')); 
+	
+	--Determine the Initiator Service, Target Service and the Contract 
+	BEGIN DIALOG @InitDlgHandle
+	FROM SERVICE
+	[//KDX/Debt/InitiatorService]
+	TO SERVICE
+	'//KDX/Debt/TargetService'
+	ON CONTRACT
+	[//KDX/Debt/Contract]
+	WITH ENCRYPTION=OFF; 
+
+	--Send the Message
+	SEND ON CONVERSATION @InitDlgHandle 
+	MESSAGE TYPE
+	[//KDX/Debt/RequestMessage]
+	(@RequestMessage);
+	--SELECT @RequestMessage AS SentRequestMessage;
+	COMMIT TRAN 
+END
+GO
+
+--SELECT ClientID,Debt FROM Clients_Source AS Clients WHERE ClientID = 1 FOR XML AUTO, root('RequestMessage')
+
+CREATE or ALTER PROCEDURE DebtInfoUpply
+AS
+BEGIN
+
+	DECLARE @TargetDlgHandle UNIQUEIDENTIFIER,
+			@Message NVARCHAR(4000),
+			@MessageType Sysname,
+			@ReplyMessage NVARCHAR(4000),
+			@ReplyMessageName Sysname,
+			@ClientID BIGINT,
+			@Debt Numeric(18,3),
+			@xml XML; 
+	
+	BEGIN TRAN; 
+
+	--Receive message from Initiator
+	RECEIVE TOP(1)
+		@TargetDlgHandle = Conversation_Handle,
+		@Message = Message_Body,
+		@MessageType = Message_Type_Name
+	FROM dbo.TargetQueueKDX; 
+
+	SELECT @Message;
+
+	SET @xml = CAST(@Message AS XML);
+
+	SELECT @ClientID = R.Clients.value('@ClientID','BIGINT'),
+		@Debt = R.Clients.value('@Debt','Numeric(18,2)')
+	FROM @xml.nodes('/RequestMessage/Clients') as R(Clients);
+
+	IF EXISTS (SELECT * FROM Clients WHERE ClientID = @ClientID)
+	BEGIN
+		UPDATE Clients
+		SET Debt = @Debt
+		WHERE ClientID = @ClientID;
+	END;
+	
+	SELECT @Message AS ReceivedRequestMessage, @MessageType; 
+	
+	-- Confirm and Send a reply
+	IF @MessageType=N'//KDX/Debt/RequestMessage'
+	BEGIN
+		SET @ReplyMessage =N'<ReplyMessage> Message received</ReplyMessage>'; 
+	
+		SEND ON CONVERSATION @TargetDlgHandle
+		MESSAGE TYPE
+		[//KDX/Debt/ReplyMessage]
+		(@ReplyMessage);
+		END CONVERSATION @TargetDlgHandle;
+	END 
+	
+	SELECT @ReplyMessage AS SentReplyMessage; 
+
+	COMMIT TRAN;
+END
+go
+
+CREATE or ALTER PROCEDURE DebtInfoConfirm
+AS
+BEGIN
+	--Receiving Reply Message from the Target.	
+	DECLARE @InitiatorReplyDlgHandle UNIQUEIDENTIFIER,
+			@ReplyReceivedMessage NVARCHAR(1000) 
+	
+	BEGIN TRAN; 
+
+		RECEIVE TOP(1)
+			@InitiatorReplyDlgHandle=Conversation_Handle
+			,@ReplyReceivedMessage=Message_Body
+		FROM dbo.InitiatorQueueKDX; 
+		
+		END CONVERSATION @InitiatorReplyDlgHandle; 
+		
+		SELECT @ReplyReceivedMessage AS ReceivedRepliedMessage; 
+
+	COMMIT TRAN; 
+END
+go
+
+ALTER QUEUE [dbo].[InitiatorQueueKDX] WITH STATUS = ON , RETENTION = OFF , POISON_MESSAGE_HANDLING (STATUS = OFF) 
+	, ACTIVATION (   STATUS = ON ,
+        PROCEDURE_NAME = DebtInfoConfirm, MAX_QUEUE_READERS = 1, EXECUTE AS OWNER) ; 
+
+GO
+ALTER QUEUE [dbo].[TargetQueueKDX] WITH STATUS = ON , RETENTION = OFF , POISON_MESSAGE_HANDLING (STATUS = OFF)
+	, ACTIVATION (  STATUS = ON ,
+        PROCEDURE_NAME = DebtInfoUpply, MAX_QUEUE_READERS = 1, EXECUTE AS OWNER) ; 
+
+GO
+
+CREATE TRIGGER Clients_Source_DebtChanche
+   ON  Clients_Source
+   AFTER UPDATE
+AS 
+declare @ClientId bigint;
+BEGIN
+  IF (COLUMNS_UPDATED()) > 0  
+  begin
+	SELECT @ClientId = ClientId FROM inserted ins;
+    exec DebtInfoSend @ClientId;
+  end	
+END
+GO
+
+update Clients_Source set Debt = coalesce(Debt,0) + 1 where ClientID = 1;
+select * from Clients_Source where ClientID = 1;
+select * from Clients where ClientID = 1;
+go
 
 
