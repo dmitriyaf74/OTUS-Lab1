@@ -269,6 +269,12 @@ and o.OrderDate >= '20100101' and o.OrderDate < '20150101'*/
 SELECT * INTO Clients_Source  FROM Clients
 
 --Включение СервисБрокера
+
+/*Описание!!!
+При изменении данных о задолженности клиента в учетной БД - Table - Clients_Source
+Создаем сообщение для БД-КПК и записываем ее в Clients
+*/
+
 USE [master]
 ALTER DATABASE KPK_DB_X SET ENABLE_BROKER; 
 ALTER DATABASE KPK_DB_X SET TRUSTWORTHY ON;
@@ -448,7 +454,7 @@ GO
 
 update Clients_Source set Debt = coalesce(Debt,0) + 1 where ClientID = 1;
 select * from Clients_Source where ClientID = 1;
-select * from Clients where ClientID = 1;
+select * from Clients --where ClientID = 1;
 go
 
 
