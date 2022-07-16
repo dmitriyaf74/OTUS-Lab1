@@ -6,18 +6,18 @@ GO
 --declare @databasename varchar(20)
 --set @databasename = 'KPK_DB'
 
-drop database if exists KPK_DB_X
+drop database if exists kpkDBx
 
-CREATE DATABASE [KPK_DB_X]
+CREATE DATABASE [kpkDBx]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'KPK_DB1', FILENAME = N'C:\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\KPK_DB_X.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+( NAME = N'KPK_DB1', FILENAME = N'C:\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\kpkDBx.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
  LOG ON 
-( NAME = N'KPK_DB1_log', FILENAME = N'C:\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\KPK_DB_X_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
+( NAME = N'KPK_DB1_log', FILENAME = N'C:\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\kpkDBx_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
  WITH CATALOG_COLLATION = DATABASE_DEFAULT
 GO
 
-USE [KPK_DB_X]
+USE [kpkDBx]
 GO
 
 
@@ -243,9 +243,9 @@ ALTER TABLE OrderSpecs  WITH CHECK ADD  CONSTRAINT FK_OrderSpecs_Orders FOREIGN 
 --alter table OrderSpecs add CONSTRAINT PK_OrderSpecs primary key (OrderSpecId) 
 --select distinct str(DATEPART(year,orderdate)) + '0101' from orders order by 1
 
-alter database KPK_DB_X add FileGroup YearData 
-alter database KPK_DB_X add File
-(Name = N'YEARS',FileName=N'C:\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\KPK_DB_X_YearData.ndf',
+alter database kpkDBx add FileGroup YearData 
+alter database kpkDBx add File
+(Name = N'YEARS',FileName=N'C:\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\kpkDBx_YearData.ndf',
 size=100mb, FileGrowth=10mb) to FileGroup YearData 
 
 
@@ -276,12 +276,12 @@ SELECT * INTO Clients_Source  FROM Clients
 */
 
 USE [master]
-ALTER DATABASE KPK_DB_X SET ENABLE_BROKER; 
-ALTER DATABASE KPK_DB_X SET TRUSTWORTHY ON;
-ALTER AUTHORIZATION ON DATABASE::KPK_DB_X TO [sa];
+ALTER DATABASE kpkDBx SET ENABLE_BROKER; 
+ALTER DATABASE kpkDBx SET TRUSTWORTHY ON;
+ALTER AUTHORIZATION ON DATABASE::kpkDBx TO [sa];
 
 
-USE [KPK_DB_X]
+USE [kpkDBx]
 --Создание запросов
 -- For Request
 CREATE MESSAGE TYPE
